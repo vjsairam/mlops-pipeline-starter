@@ -1,14 +1,13 @@
-.PHONY: help init install install-dev clean test lint format type-check security-check docs serve-docs docker-build docker-run deploy-pipelines deploy-serving
+.PHONY: help init install install-dev clean test lint format type-check security-check docker-build docker-up docker-down
 
 PYTHON := python3
 PIP := $(PYTHON) -m pip
-PROJECT_NAME := mlops-pipeline
-DOCKER_REGISTRY := your-registry.io
-VERSION := $(shell git describe --tags --always --dirty)
+PROJECT_NAME := data-pipeline
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
 
 # Default target
 help:
-	@echo "MLOps Pipeline - Development Commands"
+	@echo "Data Pipeline - Development Commands"
 	@echo ""
 	@echo "Setup:"
 	@echo "  make init          - Initialize project (create venv, install deps)"
@@ -26,25 +25,15 @@ help:
 	@echo "  make security-check - Run security checks"
 	@echo "  make clean         - Clean build artifacts"
 	@echo ""
-	@echo "Documentation:"
-	@echo "  make docs          - Build documentation"
-	@echo "  make serve-docs    - Serve documentation locally"
-	@echo ""
 	@echo "Docker:"
 	@echo "  make docker-build  - Build Docker images"
-	@echo "  make docker-push   - Push Docker images to registry"
-	@echo "  make docker-run    - Run services locally with docker-compose"
+	@echo "  make docker-up     - Start all services"
+	@echo "  make docker-down   - Stop all services"
+	@echo "  make docker-logs   - View service logs"
 	@echo ""
-	@echo "Deployment:"
-	@echo "  make deploy-pipelines ENV=<env> - Deploy pipelines to environment"
-	@echo "  make deploy-serving ENV=<env>   - Deploy serving to environment"
-	@echo "  make deploy-all ENV=<env>       - Deploy everything"
-	@echo ""
-	@echo "MLOps:"
-	@echo "  make train         - Run training pipeline locally"
-	@echo "  make evaluate      - Run evaluation pipeline"
-	@echo "  make serve         - Start model serving locally"
-	@echo "  make monitor       - Start monitoring stack"
+	@echo "Pipeline:"
+	@echo "  make pipeline-validate - Validate pipeline configurations"
+	@echo "  make data-quality  - Run data quality checks"
 
 # Setup commands
 init: clean
@@ -59,191 +48,106 @@ install:
 
 install-dev:
 	$(PIP) install -r requirements-dev.txt
-	pre-commit install
+	$(PIP) install -e .
 
 # Testing commands
-test:
-	pytest tests/ -v --cov --cov-report=term-missing
+test: test-unit test-integration
 
 test-unit:
-	pytest tests/unit -v -m unit
+	pytest tests/unit -v --cov=data_quality --cov-report=term-missing
 
 test-integration:
-	pytest tests/integration -v -m integration
+	pytest tests/integration -v
 
 test-e2e:
-	pytest tests/e2e -v -m e2e
+	pytest tests/e2e -v
 
 test-coverage:
-	pytest tests/ --cov --cov-report=html --cov-report=xml
-	@echo "Coverage report generated in htmlcov/index.html"
+	pytest --cov=data_quality --cov-report=html --cov-report=term-missing
 
 # Code quality commands
 lint:
-	ruff check .
 	black --check .
-	mypy mlops/ pipelines/ serving/
+	ruff check .
+	pylint data_quality/
 
 format:
 	black .
 	ruff check --fix .
+	isort .
 
 type-check:
-	mypy mlops/ pipelines/ serving/ --ignore-missing-imports
+	mypy data_quality/ --ignore-missing-imports
 
 security-check:
-	bandit -r mlops/ pipelines/ serving/ -ll
-	safety check --json
+	bandit -r data_quality/ -ll
+	safety check
+	pip-audit
 
-pre-commit:
-	pre-commit run --all-files
+# Docker commands
+docker-build:
+	docker compose build
 
-# Documentation
-docs:
-	cd docs && $(MAKE) html
+docker-up:
+	docker compose up -d
 
-serve-docs:
-	cd docs/_build/html && python -m http.server 8000
+docker-down:
+	docker compose down
 
-# Cleaning
+docker-logs:
+	docker compose logs -f
+
+docker-restart:
+	docker compose restart
+
+docker-clean:
+	docker compose down -v
+	docker system prune -f
+
+# Pipeline commands
+pipeline-validate:
+	@echo "Validating pipeline configurations..."
+	python -m data_quality.validators.base_validator
+
+data-quality:
+	@echo "Running data quality checks..."
+	pytest tests/unit/test_validators.py -v
+
+# Cleanup commands
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	find . -type f -name ".coverage" -delete 2>/dev/null || true
 	rm -rf build/ dist/ htmlcov/ .coverage coverage.xml
 
-# Docker commands
-docker-build:
-	docker build -t $(DOCKER_REGISTRY)/$(PROJECT_NAME)-training:$(VERSION) -f serving/containers/Dockerfile.training .
-	docker build -t $(DOCKER_REGISTRY)/$(PROJECT_NAME)-serving:$(VERSION) -f serving/containers/Dockerfile.serving .
-	docker build -t $(DOCKER_REGISTRY)/$(PROJECT_NAME)-monitoring:$(VERSION) -f observability/monitoring/Dockerfile .
+# Development utilities
+.env:
+	@if [ ! -f .env ]; then \
+		echo "Creating .env file from .env.example..."; \
+		cp .env.example .env; \
+		echo "IMPORTANT: Edit .env and replace all CHANGE_ME_* values with actual secrets!"; \
+	else \
+		echo ".env file already exists"; \
+	fi
 
-docker-push:
-	docker push $(DOCKER_REGISTRY)/$(PROJECT_NAME)-training:$(VERSION)
-	docker push $(DOCKER_REGISTRY)/$(PROJECT_NAME)-serving:$(VERSION)
-	docker push $(DOCKER_REGISTRY)/$(PROJECT_NAME)-monitoring:$(VERSION)
+setup-dev: init .env
+	@echo "Development environment ready!"
+	@echo "Next steps:"
+	@echo "  1. Edit .env with your configuration"
+	@echo "  2. Run: make docker-up"
+	@echo "  3. Access services at:"
+	@echo "     - Airflow: http://localhost:8080"
+	@echo "     - Grafana: http://localhost:3000"
+	@echo "     - Prometheus: http://localhost:9090"
 
-docker-run:
-	docker-compose up -d
+# Pre-commit
+pre-commit:
+	pre-commit run --all-files
 
-docker-stop:
-	docker-compose down
-
-# Kubernetes/Deployment commands
-deploy-pipelines:
-ifndef ENV
-	$(error ENV is not set. Use: make deploy-pipelines ENV=dev)
-endif
-	kubectl apply -k pipelines/manifests/overlays/$(ENV)
-	@echo "Pipelines deployed to $(ENV) environment"
-
-deploy-serving:
-ifndef ENV
-	$(error ENV is not set. Use: make deploy-serving ENV=dev)
-endif
-	kubectl apply -k serving/manifests/overlays/$(ENV)
-	@echo "Serving deployed to $(ENV) environment"
-
-deploy-monitoring:
-ifndef ENV
-	$(error ENV is not set. Use: make deploy-monitoring ENV=dev)
-endif
-	kubectl apply -k observability/monitoring/manifests/overlays/$(ENV)
-	@echo "Monitoring deployed to $(ENV) environment"
-
-deploy-all: deploy-pipelines deploy-serving deploy-monitoring
-
-# MLOps workflow commands
-train:
-	python -m pipelines.train.main --config config/pipelines/train.yaml
-
-evaluate:
-	python -m pipelines.eval.main --config config/pipelines/eval.yaml
-
-promote:
-	python -m pipelines.promote.main --config config/pipelines/promote.yaml
-
-serve:
-	uvicorn serving.api.main:app --reload --host 0.0.0.0 --port 8000
-
-monitor:
-	docker-compose -f observability/docker-compose.monitoring.yml up -d
-	@echo "Monitoring stack started. Grafana: http://localhost:3000"
-
-# Feature store commands
-feature-apply:
-	cd feature_store && feast apply
-
-feature-materialize:
-	cd feature_store && feast materialize-incremental $(shell date -u +"%Y-%m-%dT%H:%M:%S")
-
-feature-ui:
-	cd feature_store && feast ui
-
-# Data validation
-validate-data:
-	python -m data_quality.validate --dataset $(DATASET)
-
-# Infrastructure commands
-infra-plan:
-ifndef ENV
-	$(error ENV is not set. Use: make infra-plan ENV=dev)
-endif
-	cd infrastructure/terraform && terraform plan -var-file=environments/$(ENV).tfvars
-
-infra-apply:
-ifndef ENV
-	$(error ENV is not set. Use: make infra-apply ENV=dev)
-endif
-	cd infrastructure/terraform && terraform apply -var-file=environments/$(ENV).tfvars
-
-# Utility commands
-check-env:
-	@echo "Python version: $(shell $(PYTHON) --version)"
-	@echo "Pip version: $(shell $(PIP) --version)"
-	@echo "Project version: $(VERSION)"
-	@echo "Docker version: $(shell docker --version 2>/dev/null || echo 'Not installed')"
-	@echo "Kubectl version: $(shell kubectl version --client --short 2>/dev/null || echo 'Not installed')"
-	@echo "Terraform version: $(shell terraform version -json 2>/dev/null | jq -r '.terraform_version' || echo 'Not installed')"
-
-# Development database
-db-start:
-	docker run -d --name mlops-postgres \
-		-e POSTGRES_USER=mlops \
-		-e POSTGRES_PASSWORD=mlops \
-		-e POSTGRES_DB=mlops \
-		-p 5432:5432 \
-		postgres:14
-
-db-stop:
-	docker stop mlops-postgres && docker rm mlops-postgres
-
-# MLflow server
-mlflow-server:
-	mlflow server \
-		--backend-store-uri sqlite:///mlflow.db \
-		--default-artifact-root ./mlruns \
-		--host 0.0.0.0 \
-		--port 5000
-
-# Airflow
-airflow-init:
-	cd pipelines && airflow db init
-	cd pipelines && airflow users create \
-		--username admin \
-		--password admin \
-		--firstname Admin \
-		--lastname User \
-		--role Admin \
-		--email admin@example.com
-
-airflow-start:
-	cd pipelines && airflow webserver -D
-	cd pipelines && airflow scheduler -D
-
-airflow-stop:
-	pkill -f "airflow webserver" || true
-	pkill -f "airflow scheduler" || true
+pre-commit-update:
+	pre-commit autoupdate

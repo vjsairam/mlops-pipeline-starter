@@ -17,11 +17,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "mlops-terraform-state"
-    key    = "mlops-pipeline/terraform.tfstate"
+    bucket = "data-pipeline-terraform-state"
+    key    = "data-pipeline/terraform.tfstate"
     region = "us-east-1"
     encrypt = true
-    dynamodb_table = "mlops-terraform-locks"
+    dynamodb_table = "data-pipeline-terraform-locks"
   }
 }
 
@@ -31,7 +31,7 @@ provider "aws" {
   default_tags {
     tags = {
       Environment = var.environment
-      Project     = "mlops-pipeline"
+      Project     = "data-pipeline"
       ManagedBy   = "terraform"
       Owner       = var.owner_email
     }

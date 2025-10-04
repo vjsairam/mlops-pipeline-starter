@@ -61,7 +61,7 @@ variable "eks_node_group_max_size" {
 }
 
 variable "rds_instance_class" {
-  description = "RDS instance class for MLflow backend"
+  description = "RDS instance class for application backend"
   type        = string
   default     = "db.t3.medium"
 }

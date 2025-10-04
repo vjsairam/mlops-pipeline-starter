@@ -1,299 +1,252 @@
-# MLOps Pipeline Starter
+# Data Pipeline
 
-Production-ready template for continuous training and continuous delivery (CT/CD) of ML models with data validation, feature pipelines, experiment tracking, model registry, CI/CD to real-time inference with canary rollouts and drift monitoring.
+Production-ready data pipeline framework for building reliable, scalable data processing systems with built-in data quality validation, monitoring, and orchestration.
 
 ## Features
 
-### Core MLOps Capabilities
-- **Continuous Training**: Automated model retraining on data/performance triggers
-- **Continuous Delivery**: GitOps-based deployment with canary rollouts
+### Core Capabilities
 - **Data Validation**: Great Expectations integration for data quality checks
-- **Feature Store**: Feast-based feature management with online/offline stores
-- **Experiment Tracking**: MLflow/Weights & Biases integration
-- **Model Registry**: Centralized model versioning and promotion
-- **Model Governance**: Model cards, explainability (SHAP/LIME), fairness checks
-- **Monitoring**: Prometheus/Grafana with drift detection (Evidently)
-- **Security**: Artifact signing (Cosign), SLSA provenance, secrets management
+- **Orchestration**: Apache Airflow for workflow management
+- **Monitoring**: Prometheus/Grafana for metrics and observability
+- **Data Processing**: Scalable batch and streaming data pipelines
+- **Quality Assurance**: Automated data quality checks and reporting
+- **Security**: Environment-based secrets management and access control
 
 ### Infrastructure & Deployment
-- **Infrastructure as Code**: Terraform for AWS/GCP/Azure
-- **Container Orchestration**: Kubernetes with Helm charts
-- **GitOps**: ArgoCD for declarative deployments
-- **Canary Deployments**: Argo Rollouts with automatic rollback
-- **Load Balancing**: Service mesh integration
-- **Auto-scaling**: HPA/VPA based on metrics
+- **Infrastructure as Code**: Terraform for cloud resource provisioning
+- **Container Orchestration**: Docker Compose for local development
+- **CI/CD**: GitHub Actions for automated testing and deployment
+- **Observability**: Structured logging and distributed tracing
+- **Scalability**: Resource limits and auto-scaling capabilities
 
 ## Quick Start
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.9+
 - Docker & Docker Compose
-- Kubernetes cluster (for production)
-- Cloud provider account (AWS/GCP/Azure)
+- Git
 
 ### Local Development Setup
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourorg/mlops-pipeline-starter.git
-cd mlops-pipeline-starter
+git clone https://github.com/yourorg/data-pipeline.git
+cd data-pipeline
 ```
 
-2. **Initialize the environment**
+2. **Set up environment**
 ```bash
-make init
-```
-
-3. **Configure environment variables**
-```bash
+# Copy environment template
 cp .env.example .env
+
 # Edit .env with your configuration
+# IMPORTANT: Generate secure secrets for all CHANGE_ME_* values
 ```
 
-4. **Start local services**
+3. **Install dependencies**
 ```bash
-docker-compose up -d
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements-dev.txt
+pip install -e .
+```
+
+4. **Start services**
+```bash
+docker compose up -d
 ```
 
 5. **Access services**
-- MLflow UI: http://localhost:5000
-- Airflow UI: http://localhost:8080 (admin/admin)
-- Grafana: http://localhost:3000 (admin/admin)
-- Jupyter: http://localhost:8888 (token: mlops)
+- Airflow: http://localhost:8080
+- Grafana: http://localhost:3000
+- Prometheus: http://localhost:9090
 
 ## Project Structure
 
 ```
-mlops-pipeline-starter/
-├── pipelines/              # Training & deployment orchestration
-├── serving/                # Model serving infrastructure
-├── observability/          # Monitoring & alerting
-├── mlops/                  # ML-specific utilities
-├── security/               # Security & compliance
-├── data_quality/           # Data validation with Great Expectations
-├── feature_store/          # Feature definitions and management
-├── model_governance/       # Model cards and governance
-├── infrastructure/         # IaC templates (Terraform/Helm)
-├── tests/                  # Unit, integration, and E2E tests
-├── config/                 # Configuration files
-└── docs/                   # Documentation
+data-pipeline/
+├── data_quality/           # Data validation and quality checks
+│   ├── validators/         # Custom validators
+│   └── great_expectations.yml
+├── pipelines/              # Airflow DAGs and workflow definitions
+├── infrastructure/         # Infrastructure as Code
+│   └── terraform/          # Terraform configurations
+├── observability/          # Monitoring and dashboards
+│   ├── monitoring/         # Prometheus configs
+│   └── dashboards/         # Grafana dashboards
+├── tests/                  # Test suite
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+├── docker-compose.yml      # Local development environment
+├── .env.example            # Environment variables template
+└── pyproject.toml          # Project configuration
 ```
 
-## Workflow
+## Development
 
-### 1. Data Pipeline
+### Running Tests
 ```bash
-# Validate incoming data
-make validate-data DATASET=path/to/data.csv
+# Run all tests
+pytest
 
-# Run feature engineering
-python -m pipelines.feature_engineering.main --config config/features.yaml
+# Run with coverage
+pytest --cov=data_quality --cov-report=html
 
-# Apply feature definitions
-make feature-apply
+# Run specific test types
+pytest tests/unit
+pytest tests/integration
 ```
 
-### 2. Training Pipeline
+### Code Quality
 ```bash
-# Run training pipeline
-make train
+# Format code
+black .
 
-# Or trigger via Airflow
-airflow dags trigger training_pipeline
+# Lint code
+ruff check .
+
+# Type checking
+mypy data_quality/
+
+# Run all pre-commit hooks
+pre-commit run --all-files
 ```
 
-### 3. Model Evaluation & Promotion
-```bash
-# Evaluate model
-make evaluate
-
-# Promote to production (requires approval)
-make promote ENV=prod
-```
-
-### 4. Deployment
-```bash
-# Deploy to staging (automatic on main branch)
-make deploy-all ENV=staging
-
-# Deploy to production (manual trigger)
-make deploy-all ENV=prod
-```
-
-### 5. Monitoring
-```bash
-# Start monitoring stack
-make monitor
-
-# Check drift detection
-python -m observability.monitoring.drift_detector --model-version v1.0.0
-```
-
-## CI/CD Pipeline
-
-### Continuous Integration
-- **Linting**: Black, Ruff, MyPy
-- **Testing**: Unit, Integration, E2E tests
-- **Security**: Bandit, Safety, Trivy scans
-- **Data Validation**: Great Expectations checks
-- **Docker Build**: Multi-stage builds with caching
-
-### Continuous Deployment
-- **Model Validation**: Performance thresholds
-- **Infrastructure**: Terraform apply
-- **Deployment**: Helm charts with Argo Rollouts
-- **Smoke Tests**: API endpoint validation
-- **Canary Promotion**: Gradual traffic shifting
-- **Automatic Rollback**: On SLO breach
+### Adding a New Pipeline
+1. Create DAG file in `pipelines/`
+2. Add data quality checks in `data_quality/validators/`
+3. Add tests in `tests/`
+4. Update documentation
 
 ## Configuration
 
-### Model Training
-Edit `config/pipelines/train.yaml`:
-```yaml
-training:
-  max_epochs: 100
-  batch_size: 64
-  learning_rate: 0.001
-  early_stopping_patience: 10
-```
+All configuration is managed through environment variables. See `.env.example` for all available options.
 
-### Feature Store
-Configure features in `feature_store/definitions/`:
-```python
-customer_stats_fv = FeatureView(
-    name="customer_stats",
-    entities=["customer_id"],
-    ttl=timedelta(days=7),
-    features=[...],
-    online=True,
-    source=customer_stats_source,
-)
-```
+### Key Configuration Areas
+- **Database**: PostgreSQL connection settings
+- **Cache**: Redis configuration
+- **Monitoring**: Prometheus/Grafana settings
+- **Security**: JWT, API keys, secrets management
+- **Cloud**: AWS/GCP/Azure credentials (optional)
 
-### Monitoring Alerts
-Configure in `observability/alerting/alerts.yaml`:
-```yaml
-alerts:
-  - name: ModelDriftDetected
-    condition: drift_score > 0.3
-    action: create_jira_ticket
-```
+## Deployment
 
-## Testing
-
-### Run All Tests
+### Development
 ```bash
-make test
+docker compose up -d
 ```
 
-### Specific Test Suites
-```bash
-# Unit tests
-make test-unit
+### Production
+Production deployment uses GitHub Actions CI/CD pipeline:
+1. Push to `main` branch triggers CI
+2. Tests run automatically
+3. Security scans execute
+4. Docker images build on success
 
-# Integration tests
-make test-integration
+See `.github/workflows/ci.yml` for pipeline details.
 
-# End-to-end tests
-make test-e2e
+## Monitoring
 
-# Load tests
-make test-load
-```
+### Metrics
+- Pipeline execution times
+- Data quality scores
+- System resource usage
+- Error rates and types
+
+### Dashboards
+Access Grafana at http://localhost:3000 to view:
+- Pipeline performance
+- Data quality metrics
+- System health
+
+### Alerting
+Configure alerts in:
+- Slack (via webhook)
+- Email (SMTP)
+- PagerDuty (for critical issues)
 
 ## Security
 
 ### Secrets Management
-- HashiCorp Vault integration
-- Kubernetes sealed secrets
-- Environment-specific encryption
+- Never commit `.env` file
+- Use strong passwords (generated via `openssl rand -hex 32`)
+- Rotate credentials regularly
+- Use separate credentials per environment
 
-### Compliance
-- GDPR/CCPA data privacy
-- Model governance with audit trails
-- Artifact signing with Cosign
-- SLSA provenance generation
-
-## Performance
-
-### SLA Targets
-- Model inference: p95 < 250ms
-- Data freshness: < 1 hour
-- Feature serving: p99 < 50ms
-- Training pipeline: < 4 hours
-
-### Optimization
-- Model quantization
-- Feature caching
-- Batch prediction
-- GPU acceleration
+### Security Features
+- Pre-commit hooks for secret detection
+- Automated security scanning in CI
+- Container security hardening
+- Network isolation
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Docker services not starting**
+**Services won't start**
 ```bash
-docker-compose logs <service-name>
-docker-compose restart <service-name>
+# Check logs
+docker compose logs
+
+# Verify .env file exists
+ls -la .env
+
+# Check port conflicts
+docker compose ps
 ```
 
-2. **Training pipeline failures**
+**Database connection errors**
+```bash
+# Verify PostgreSQL is running
+docker compose ps postgres
+
+# Check credentials in .env
+cat .env | grep POSTGRES
+```
+
+**Airflow tasks failing**
 ```bash
 # Check Airflow logs
-airflow dags show training_pipeline
-airflow tasks test training_pipeline task_id execution_date
-```
+docker compose logs airflow-scheduler
+docker compose logs airflow-webserver
 
-3. **Model serving errors**
-```bash
-# Check pod logs
-kubectl logs -n mlops deployment/mlops-model
-kubectl describe pod -n mlops <pod-name>
-```
-
-4. **Data validation failures**
-```bash
-# View validation report
-python -m data_quality.generate_report --output reports/validation.html
+# Access Airflow UI for detailed logs
+open http://localhost:8080
 ```
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
+### Development Workflow
+1. Create feature branch
+2. Make changes
+3. Run tests locally
+4. Submit pull request
+5. CI runs automatically
+6. Merge after approval
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+### Commit Message Format
+Follow conventional commits:
+```
+feat: add new data validator
+fix: resolve database connection issue
+docs: update README with examples
+test: add integration tests for pipeline
+```
 
 ## License
 
-Apache 2.0 - See [LICENSE](LICENSE) for details.
+Apache 2.0
 
 ## Support
 
-- Documentation: [docs/](docs/)
-- Issues: [GitHub Issues](https://github.com/yourorg/mlops-pipeline/issues)
-- Slack: #mlops-pipeline
+- Issues: [GitHub Issues](https://github.com/yourorg/data-pipeline/issues)
+- Documentation: [Full Docs](https://data-pipeline.readthedocs.io)
 
 ## Roadmap
 
-- [ ] Multi-model serving
-- [ ] A/B testing framework
-- [ ] Federated learning support
-- [ ] AutoML integration
-- [ ] Model explainability dashboard
-- [ ] Cost optimization automation
-- [ ] Edge deployment support
-- [ ] Real-time feature computation
-
-## Acknowledgments
-
-Built with best practices from:
-- [MLOps Community](https://mlops.community/)
-- [Google MLOps Maturity Model](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning)
-- [Microsoft Team Data Science Process](https://docs.microsoft.com/en-us/azure/machine-learning/team-data-science-process/)
-- [AWS Well-Architected ML Lens](https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/)
+- [ ] Add streaming data support
+- [ ] Implement data lineage tracking
+- [ ] Add data catalog integration
+- [ ] Support for multiple orchestrators
+- [ ] Enhanced observability features
