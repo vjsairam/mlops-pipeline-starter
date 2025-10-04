@@ -1,0 +1,214 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+.conda/
+*.conda
+*.virtualenv
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# ML/Data Science
+data/raw/*
+data/processed/*
+data/features/*
+models/artifacts/*
+models/checkpoints/*
+models/exports/*
+*.h5
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.pt
+*.pth
+*.pb
+*.tflite
+*.mlmodel
+*.safetensors
+
+# MLflow
+mlruns/
+mlflow.db
+mlflow-artifacts/
+
+# DVC
+.dvc/cache
+.dvc/tmp
+.dvc/plots
+
+# Weights & Biases
+wandb/
+
+# TensorBoard
+tensorboard/
+logs/
+runs/
+
+# Data
+*.csv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.json
+!config/**/*.json
+!observability/dashboards/*.json
+*.xlsx
+*.xls
+*.sqlite
+*.db
+*.tsv
+*.arrow
+
+# Large files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Cloud provider
+.aws/
+.gcp/
+.azure/
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+*.auto.tfvars
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+*-kubeconfig.yaml
+
+# Docker
+.dockerignore.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.project
+.pydevproject
+.settings/
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+cover/
+*.cover
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.log
+.cache
+
+# Environment variables
+.env
+.env.*
+!.env.example
+.envrc
+secrets/
+credentials/
+*.key
+*.pem
+*.crt
+*.p12
+*.jks
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+site/
+
+# Performance profiling
+*.prof
+*.lprof
+*.stats
+profile_output/
+
+# Cache
+.cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Model monitoring
+drift_reports/
+performance_reports/
+prediction_logs/
+
+# Backup files
+backup/
+*.backup
+backups/
+
+# Notebooks data
+notebooks/data/
+notebooks/outputs/
+notebooks/experiments/*
+!notebooks/experiments/.gitkeep
